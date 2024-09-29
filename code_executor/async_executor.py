@@ -8,11 +8,13 @@ import asyncio
 import pprint
 from loguru import logger
 
+from code_executor.constant import SCRIPT_FILES
+
 
 class AsyncCodeExecutor(object):
     def __init__(
         self,
-        base_command: Union[str, List[str]] = "bash",
+        start_subprocess: Union[str, List[str]] = "bash",
         print_cmd: str = 'echo "{}"',
         *,
         work_dir: str = None,
@@ -20,7 +22,7 @@ class AsyncCodeExecutor(object):
         save_obj_cmd: str = None,
         load_obj_cmd: str = None
     ):
-        self.base_command = base_command
+        self.start_subprocess = start_subprocess
         self.print_cmd = print_cmd + "\n"
         self.__process = None
         self.__cmd_event = asyncio.Event()  # 用于通知process前一个输入的command是否执行完成
@@ -78,7 +80,7 @@ class AsyncCodeExecutor(object):
 
         # 最后一个cmd的全局作用域保存路径
         obj_path = self.obj_save_path(str(len(executor_state["_cmd_space"]) - 1))
-        self.base_command[-1] = self.base_command[-1] + self.load_obj_cmd.format(obj_path)
+        self.start_subprocess[-1] = self.start_subprocess[-1] + self.load_obj_cmd.format(obj_path)
 
         for k, v in executor_state.items():
             if k.startswith("_"):
@@ -98,7 +100,7 @@ class AsyncCodeExecutor(object):
 
     async def start_process(self):
         self.__process = await asyncio.create_subprocess_exec(
-            *self.base_command,
+            *self.start_subprocess,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -199,7 +201,11 @@ class AsyncCodeExecutor(object):
                 continue
 
             if isinstance(cmds, str):
-                cmds = [cmds]
+                if not cmds.endswith(SCRIPT_FILES):
+                    cmds = [cmds]
+                else:
+                    with open(cmds, "r") as f:
+                        cmds = [f.read()]
 
             try:
                 await self._run(cmds)

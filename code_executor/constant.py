@@ -1,10 +1,12 @@
 from textwrap import dedent
 from dataclasses import dataclass
 
+SCRIPT_FILES = (".py", ".sh")
+
 
 @dataclass(frozen=True)
 class ExeConfig:
-    session_command: list   # 启动一个 Python 或者 bash 交互式会话
+    start_subprocess: list   # 启动一个 Python 或者 bash 子进程
     print_cmd: str
     save_obj_cmd: str = None
     load_obj_cmd: str = None
@@ -12,11 +14,11 @@ class ExeConfig:
 
     def __post_init__(self):
         if self.init_code is not None:
-            self.session_command.append(self.init_code)
+            self.start_subprocess.append(self.init_code)
 
 
 PyExeConfig = ExeConfig(
-    session_command=["python3", "-i", "-q", "-u", "-c"],
+    start_subprocess=["python3", "-i", "-q", "-u", "-c"],
     print_cmd='print("{}")',
     save_obj_cmd="save_object('{}')\n",
     load_obj_cmd="load_object('{}')\n",
