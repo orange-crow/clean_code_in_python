@@ -1,9 +1,9 @@
 import pytest
-from code_executor.pyexe import PyExecutor, AsyncPyExecutor
+from code_executor.pyexe import SyncPyExecutor, AsyncPyExecutor
 
 
 def test_save():
-    pyer = PyExecutor("./test/executor_objects/pyexe", True)
+    pyer = SyncPyExecutor("./test/executor_objects/pyexe", True)
     # 初始化生成器
     python_code_gen = pyer.run()
     next(python_code_gen)  # 启动生成器
@@ -22,7 +22,7 @@ def test_save():
 
 def test_load():
     work_dir = "./test/executor_objects/pyexe"
-    pyer = PyExecutor(work_dir).load()
+    pyer = SyncPyExecutor(work_dir).load()
     # 初始化生成器
     python_code_gen = pyer.run()
     next(python_code_gen)  # 启动生成器
@@ -69,3 +69,38 @@ async def test_async_load():
     await pyer.stop_process()
     assert len(pyer._cmd_space) == 5
     assert pyer._cmd_space['4']['stdout'] == '7'
+
+
+def test_script():
+    pyer = SyncPyExecutor("./test/executor_objects/pyexe", False)
+    # 初始化生成器
+    python_code_gen = pyer.run()
+    next(python_code_gen)  # 启动生成器
+
+    # 模拟发送命令
+    python_code_gen.send("test/data/hi_python.py")
+    pyer.print_cmd_space()
+    # 停止python进程
+    pyer.stop_process()
+    assert len(pyer._cmd_space) == 1
+    assert 'Hello from Python!' in pyer._cmd_space['0']['stdout']
+    assert '3' in pyer._cmd_space['0']['stdout']
+    assert '6' in pyer._cmd_space['0']['stdout']
+
+
+@pytest.mark.asyncio
+async def test_async_script():
+    pyer = AsyncPyExecutor("./test/executor_objects/aysnc_pyexe", True)
+    # 初始化生成器
+    python_code_gen = pyer.run()
+    await python_code_gen.asend(None)  # 启动生成器
+
+    # 模拟发送命令
+    await python_code_gen.asend("test/data/hi_python.py")
+    pyer.print_cmd_space()
+    # 停止python进程
+    await pyer.stop_process()
+    assert len(pyer._cmd_space) == 1
+    assert 'Hello from Python!' in pyer._cmd_space['0']['stdout']
+    assert '3' in pyer._cmd_space['0']['stdout']
+    assert '6' in pyer._cmd_space['0']['stdout']
