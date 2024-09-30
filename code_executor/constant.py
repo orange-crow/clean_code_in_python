@@ -27,6 +27,7 @@ PyExeConfig = ExeConfig(
     import pandas as pd
     import dill
     import matplotlib.pyplot as plt
+    import traceback
 
     def save_object(filename):
         variables = globals().copy()

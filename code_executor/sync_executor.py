@@ -12,6 +12,7 @@ import pprint
 from loguru import logger
 
 from code_executor.constant import SCRIPT_FILES
+from code_executor.utils import CodeTransformer, PrintErrorHandler
 
 
 class SyncCodeExecutor(object):
@@ -195,13 +196,16 @@ class SyncCodeExecutor(object):
         full_command += self.print_cmd.format("END_OF_EXECUTION")
         logger.info(f"Sending command: {full_command}")
 
+        # 添加try-except
+        full_command = PYTHON_TRY_EXCEPT_CODE.format(full_command)
+
         try:
             self.__process.stdin.write(full_command)
             self.__process.stdin.flush()  # 确保代码被发送
         except BrokenPipeError:
             logger.warning("Process has terminated. Restarting...")
             self.start_process()
-            self.__process.stdin.write(full_command.encode())
+            self.__process.stdin.write(full_command)
             self.__process.stdin.flush()
         except KeyboardInterrupt:
             logger.warning("\nReceived keyboard interrupt. Terminating...")
